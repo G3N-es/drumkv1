@@ -1,28 +1,29 @@
 // drumkv1widget_status.h
 //
 /****************************************************************************
-   Copyright (C) 2012-2020, rncbc aka Rui Nuno Capela. All rights reserved.
+ C opyright (C) 2012-2020, rncb*c aka Rui Nuno Capela. All rights reserved.
 
-   This program is free software; you can redistribute it and/or
-   modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2
-   of the License, or (at your option) any later version.
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc.,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
- *****************************************************************************/
+*****************************************************************************/
 
 #ifndef __drumkv1widget_status_h
 #define __drumkv1widget_status_h
 
 #include <QStatusBar>
+#include <QToolButton>
 
 
 // Forward declarations.
@@ -49,6 +50,7 @@ public:
 
 	// Permanent widgets accessors.
 	drumkv1widget_keybd *keybd() const;
+	QToolButton *selectByMidi() const;
 
 	void midiInLed(bool bMidiInLed);
 	void midiInNote(int iNote, int iVelocity);
@@ -62,6 +64,7 @@ private:
 	QLabel *m_pMidiInLedLabel;
 	QLabel *m_pModifiedLabel;
 
+	QToolButton *m_pSelectByMidi;
 	drumkv1widget_keybd *m_pKeybd;
 };
 
