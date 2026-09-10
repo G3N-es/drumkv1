@@ -17,18 +17,23 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-*****************************************************************************/
+ *****************************************************************************/
 
 #ifndef __drumkv1widget_status_h
 #define __drumkv1widget_status_h
 
 #include <QStatusBar>
-#include <QToolButton>
 
+
+// Forward declarations.
 class drumkv1widget_keybd;
 
 class QLabel;
 class QPixmap;
+
+
+//-------------------------------------------------------------------------
+// drumkv1widget_status - Custom status-bar widget.
 
 class drumkv1widget_status : public QStatusBar
 {
@@ -36,11 +41,14 @@ class drumkv1widget_status : public QStatusBar
 
 public:
 
+	// Constructor.
 	drumkv1widget_status(QWidget *pParent = 0);
+
+	// Destructor.
 	~drumkv1widget_status();
 
+	// Permanent widgets accessors.
 	drumkv1widget_keybd *keybd() const;
-	QToolButton *selectByMidi() const;
 
 	void midiInLed(bool bMidiInLed);
 	void midiInNote(int iNote, int iVelocity);
@@ -48,13 +56,16 @@ public:
 
 private:
 
+	// Permanent widgets.
 	QPixmap *m_midiInLed[2];
 
 	QLabel *m_pMidiInLedLabel;
 	QLabel *m_pModifiedLabel;
 
-	QToolButton *m_pSelectByMidi;
 	drumkv1widget_keybd *m_pKeybd;
 };
 
-#endif
+
+#endif  // __drumkv1widget_status_h
+
+// end of drumkv1widget_status.h
