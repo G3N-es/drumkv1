@@ -38,6 +38,7 @@
 #include <QMessageBox>
 #include <QDir>
 #include <QTimer>
+#include <QElapsedTimer>
 
 #include <QShowEvent>
 #include <QHideEvent>
@@ -564,6 +565,13 @@ drumkv1widget::drumkv1widget ( QWidget *pParent )
 	QObject::connect(m_ui.StatusBar->keybd(),
 		SIGNAL(noteOnClicked(int, int)),
 		SLOT(directNoteOn(int, int)));
+
+// g3n { Boton de seleccion por MIDI
+	QObject::connect(
+		m_ui.StatusBar->selectByMidi(),
+			SIGNAL(toggled(bool)),
+			SLOT(selectByMIDIToggled(bool)));
+// g3n }
 
 	// Menu actions
 	QObject::connect(m_ui.helpConfigureAction,
@@ -1749,13 +1757,32 @@ void drumkv1widget::updateSchedNotify ( int stype, int sid )
 	qDebug("drumkv1widget::updateSchedNotify(%d, 0x%04x)", stype, sid);
 #endif
 
+	static int lastKey = -1; // g3n Guarda la última nota para no repetirla
+	static QElapsedTimer lastMidiSelection; // g3n crea un intervalo de tiempo razonable entre selecciones
+
 	switch (drumkv1_sched::Type(stype)) {
-	case drumkv1_sched::MidiIn:
-		if (sid >= 0) {
-			const int key = (sid & 0x7f);
-			const int vel = (sid >> 7) & 0x7f;
-			m_ui.Elements->midiInLedNote(key, vel);
-			m_ui.StatusBar->midiInNote(key, vel);
+		case drumkv1_sched::MidiIn:
+			if (sid >= 0) {
+				const int key = sid & 0x7f;
+				const int vel = (sid >> 7) & 0x7f;
+
+				m_ui.Elements->midiInLedNote(key, vel);
+				m_ui.StatusBar->midiInNote(key, vel);
+
+			// g3n { Seleccionar elemento por MIDI
+				if (vel > 0 &&
+					m_ui.StatusBar->selectByMidi()->isChecked() &&
+					lastKey != key &&
+					(!lastMidiSelection.isValid() ||
+					lastMidiSelection.elapsed() >= 100))
+				{
+					pDrumkUi->setCurrentElement(key);
+					m_ui.StatusBar->keybd()->setNoteKey(key);
+
+					lastKey = key;
+					lastMidiSelection.restart();
+				}
+			// g3n }
 		}
 		else
 		if (pDrumkUi->midiInCount() > 0) {

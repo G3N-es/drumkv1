@@ -27,6 +27,7 @@
 #include <QIcon>
 #include <QPixmap>
 #include <QHBoxLayout>
+#include <QFontMetrics>
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 11, 0)
 #define horizontalAdvance  width
@@ -79,17 +80,31 @@ drumkv1widget_status::drumkv1widget_status ( QWidget *pParent )
 	pMidiInWidget->setLayout(pMidiInLayout);
 	QStatusBar::addWidget(pMidiInWidget);
 
+	// g3n
+	m_pSelectByMidi = new QToolButton(this);
+	m_pSelectByMidi->setObjectName("SelectByMIDI");
+	m_pSelectByMidi->setText(tr("Auto-select element"));
+	m_pSelectByMidi->setToolTip(
+		tr("When editing, automatically select the element triggered by the incoming MIDI note."));
+	m_pSelectByMidi->setCheckable(true);
+
+	QStatusBar::addPermanentWidget(m_pSelectByMidi);
+
 	m_pKeybd = new drumkv1widget_keybd();
 	m_pKeybd->setMinimumWidth(760);
 	QStatusBar::addPermanentWidget(m_pKeybd);
 
 	const QFontMetrics fm(QStatusBar::font());
+
 	m_pModifiedLabel = new QLabel();
 	m_pModifiedLabel->setAlignment(Qt::AlignHCenter);
-	m_pModifiedLabel->setMinimumSize(QSize(fm.horizontalAdvance("MOD") + 4, fm.height()));
+	m_pModifiedLabel->setMinimumSize(
+		QSize(fm.horizontalAdvance("MOD") + 4, fm.height()));
 	m_pModifiedLabel->setToolTip(tr("Modification status"));
 	m_pModifiedLabel->setAutoFillBackground(true);
+
 	QStatusBar::addPermanentWidget(m_pModifiedLabel);
+
 }
 
 
@@ -107,6 +122,10 @@ drumkv1widget_keybd *drumkv1widget_status::keybd (void) const
 	return m_pKeybd;
 }
 
+QToolButton *drumkv1widget_status::selectByMidi(void) const
+{
+	return m_pSelectByMidi;
+}
 
 void drumkv1widget_status::midiInLed ( bool bMidiInLed )
 {
