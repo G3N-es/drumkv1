@@ -28,7 +28,7 @@
 #include "drumkv1_ui.h"
 
 #include <QWidget>
-
+#include <QTimer> // g3n
 
 // forward decls.
 namespace Ui { class drumkv1widget; }
@@ -244,6 +244,13 @@ private:
 	float m_params_ab[drumkv1::NUM_PARAMS];
 
 	int m_iUpdate;
+
+// g3n {
+private:
+
+	QTimer m_escapeTimer;
+
+// g3n }
 };
 
 

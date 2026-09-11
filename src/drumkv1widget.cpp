@@ -53,6 +53,8 @@
 //-------------------------------------------------------------------------
 // drumkv1widget - impl.
 //
+static int escapeKey = -1; // g3n Guarda la última nota que escapa de la franja de tiempo
+
 
 // Constructor.
 drumkv1widget::drumkv1widget ( QWidget *pParent )
@@ -593,6 +595,28 @@ drumkv1widget::drumkv1widget ( QWidget *pParent )
 	m_ui.StatusBar->showMessage(tr("Ready"), 5000);
 	m_ui.StatusBar->modified(false);
 	m_ui.Preset->setDirtyPreset(false);
+
+	// g3n { Recupera la ultima nota descartada y realiza la selección
+	m_escapeTimer.setSingleShot(true);
+
+	QObject::connect(&m_escapeTimer, &QTimer::timeout,
+			this, [this]() {
+				if (escapeKey == -1)
+					return;
+
+				drumkv1_ui *pDrumkUi = ui_instance();
+				if (pDrumkUi == nullptr)
+					return;
+
+				const int escapeKeyToSetected = escapeKey;
+				escapeKey = -1;
+
+				pDrumkUi->setCurrentElement(escapeKeyToSetected);
+				m_ui.StatusBar->keybd()->setNoteKey(escapeKeyToSetected);
+			});
+	// g3n }
+
+
 }
 
 
@@ -1745,7 +1769,6 @@ void drumkv1widget::updateLoadPreset ( const QString& sPreset )
 	updateDirtyPreset(false);
 }
 
-
 // Notification updater.
 void drumkv1widget::updateSchedNotify ( int stype, int sid )
 {
@@ -1753,36 +1776,53 @@ void drumkv1widget::updateSchedNotify ( int stype, int sid )
 	if (pDrumkUi == nullptr)
 		return;
 
-#ifdef CONFIG_DEBUG_0
+	#ifdef CONFIG_DEBUG_0
 	qDebug("drumkv1widget::updateSchedNotify(%d, 0x%04x)", stype, sid);
-#endif
+	#endif
 
-	static int lastKey = -1; // g3n Guarda la última nota para no repetirla
-	static QElapsedTimer lastMidiSelection; // g3n crea un intervalo de tiempo razonable entre selecciones
+// g3n {
+	static int lastElementSelected = -1; // Guarda la última nota de elemento seleccionado para no repetirla
+	static QElapsedTimer lastElementSelection; // crea un intervalo de tiempo razonable entre selecciones
+	const int timeToEscape = 200; // Configura el intervalo de tiempo
+// g3n }
 
 	switch (drumkv1_sched::Type(stype)) {
-		case drumkv1_sched::MidiIn:
-			if (sid >= 0) {
-				const int key = sid & 0x7f;
-				const int vel = (sid >> 7) & 0x7f;
+	case drumkv1_sched::MidiIn: {
+		if (sid >= 0) {
+			const int key = sid & 0x7f;
+			const int vel = (sid >> 7) & 0x7f;
 
-				m_ui.Elements->midiInLedNote(key, vel);
-				m_ui.StatusBar->midiInNote(key, vel);
+			m_ui.Elements->midiInLedNote(key, vel);
+			m_ui.StatusBar->midiInNote(key, vel);
 
-			// g3n { Seleccionar elemento por MIDI
-				if (vel > 0 &&
-					m_ui.StatusBar->selectByMidi()->isChecked() &&
-					lastKey != key &&
-					(!lastMidiSelection.isValid() ||
-					lastMidiSelection.elapsed() >= 100))
-				{
-					pDrumkUi->setCurrentElement(key);
-					m_ui.StatusBar->keybd()->setNoteKey(key);
+		// g3n { Seleccionar elemento por MIDI
 
-					lastKey = key;
-					lastMidiSelection.restart();
-				}
-			// g3n }
+			// Optimización:
+			if (m_ui.StatusBar->selectByMidi()->isChecked() &&
+				vel > 0  && // Ignora notas off
+				lastElementSelected != key && // Ignora repeticiones de la misma nota, si el elemento esta seleccionado, no lo vuelve a seleccionar.
+				(!lastElementSelection.isValid() ||
+				lastElementSelection.elapsed() >= timeToEscape)) // Actualiza solo los cambios relevantes ignorando los muy cortos.
+			{
+
+				// Reseteamos las notas escapadas, ya que esta ha sido efectiva
+				escapeKey = -1;
+				m_escapeTimer.stop();
+
+				pDrumkUi->setCurrentElement(key);
+				m_ui.StatusBar->keybd()->setNoteKey(key);
+
+				lastElementSelected = key; // grabamos la última seleccionada nota para evitar las selecciones repetidas del mismo elemento
+				lastElementSelection.restart();
+			}
+			else if (vel > 0 && m_ui.StatusBar->selectByMidi()->isChecked()) {
+				// Guarda la última nota descartada y la recupera cuando el tiempo de escape se ha cumplido.
+				// Así aseguramos que la ultima nota tocada, sea la ultima seleccionada.
+				escapeKey = key;
+				m_escapeTimer.start(timeToEscape);
+			}
+
+		// g3n }
 		}
 		else
 		if (pDrumkUi->midiInCount() > 0) {
@@ -1790,6 +1830,7 @@ void drumkv1widget::updateSchedNotify ( int stype, int sid )
 			QTimer::singleShot(200, this, SLOT(midiInLedTimeout()));
 		}
 		break;
+	}
 	case drumkv1_sched::Controller: {
 		drumkv1widget_control *pInstance
 			= drumkv1widget_control::getInstance();
